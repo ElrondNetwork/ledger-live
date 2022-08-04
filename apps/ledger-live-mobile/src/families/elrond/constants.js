@@ -1,4 +1,4 @@
-const type = "testnet";
+const type = "mainnet";
 const constants = {
   devnet: {
     explorer: "https://devnet-explorer.elrond.com",
