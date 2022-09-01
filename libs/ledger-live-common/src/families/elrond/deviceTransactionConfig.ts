@@ -3,19 +3,18 @@ import type { TransactionStatus, Transaction } from "./types";
 
 function getDeviceTransactionConfig({
   transaction: { mode, recipient },
-  status: { amount, estimatedFees },
+  status: { estimatedFees },
 }: {
   transaction: Transaction;
   status: TransactionStatus;
 }): Array<DeviceTransactionField> {
   const fields: Array<DeviceTransactionField> = [];
+  const isDelegationOperation = mode !== "send";
 
-  if (!amount.isZero()) {
-    fields.push({
-      type: "amount",
-      label: "Amount",
-    });
-  }
+  fields.push({
+    type: "amount",
+    label: "Amount",
+  });
 
   if (!estimatedFees.isZero()) {
     fields.push({
@@ -24,11 +23,10 @@ function getDeviceTransactionConfig({
     });
   }
 
-  const isDelegationOperation = mode !== "send";
   if (isDelegationOperation) {
     fields.push({
       type: "address",
-      label: "Validator",
+      label: "Receiver",
       address: recipient,
     });
   }
