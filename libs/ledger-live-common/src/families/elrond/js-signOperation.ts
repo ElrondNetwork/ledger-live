@@ -1,22 +1,46 @@
 import { BigNumber } from "bignumber.js";
 import { Observable } from "rxjs";
 import { FeeNotLoaded } from "@ledgerhq/errors";
-import type { Transaction } from "./types";
+import type { ElrondTransactionMode, Transaction } from "./types";
 import { withDevice } from "../../hw/deviceAccess";
 import { encodeOperationId } from "../../operation";
 import Elrond from "./hw-app-elrond";
 import { buildTransaction } from "./js-buildTransaction";
 import { findTokenById } from "@ledgerhq/cryptoassets";
 import { CHAIN_ID } from "./constants";
-import { Account, Operation, SignOperationEvent } from "@ledgerhq/types-live";
+import {
+  Account,
+  Operation,
+  OperationType,
+  SignOperationEvent,
+} from "@ledgerhq/types-live";
 import { getAccountNonce } from "./api";
+
+function getOptimisticOperationType(
+  transactionMode: ElrondTransactionMode
+): OperationType {
+  switch (transactionMode) {
+    case "delegate":
+      return "DELEGATE";
+    case "unDelegate":
+      return "UNDELEGATE";
+    case "withdraw":
+      return "WITHDRAW_UNBONDED";
+    case "claimRewards":
+      return "REWARD";
+    case "reDelegateRewards":
+      return "DELEGATE";
+    default:
+      return "OUT";
+  }
+}
 
 const buildOptimisticOperation = async (
   account: Account,
   transaction: Transaction,
   fee: BigNumber
 ): Promise<Operation> => {
-  const type = "OUT";
+  const type = getOptimisticOperationType(transaction.mode);
   const tokenAccount =
     (transaction.subAccountId &&
       account.subAccounts &&
