@@ -37,7 +37,7 @@ export const buildTransaction = async (
     transactionValue = new BigNumber(0); //amount of EGLD to be sent should be 0 in an ESDT transfer
   } else {
     transactionValue = t.useAllAmount
-      ? a.balance.minus(t.fees ? t.fees : new BigNumber(0))
+      ? a.spendableBalance.minus(t.fees ? t.fees : new BigNumber(0))
       : t.amount;
 
     switch (t.mode) {

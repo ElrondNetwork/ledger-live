@@ -48,8 +48,8 @@ const buildOptimisticOperation = async (
     null;
 
   let value = transaction.useAllAmount
-    ? account.balance.minus(fee)
-    : new BigNumber(transaction.amount);
+    ? account.spendableBalance.minus(fee)
+    : transaction.amount;
 
   if (tokenAccount) {
     value = transaction.amount;
