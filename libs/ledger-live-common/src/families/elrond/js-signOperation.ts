@@ -15,6 +15,7 @@ import {
   SignOperationEvent,
 } from "@ledgerhq/types-live";
 import { getAccountNonce } from "./api";
+import { getDelegationOperationAmount } from "./api/sdk";
 
 function getOptimisticOperationType(
   transactionMode: ElrondTransactionMode
@@ -57,6 +58,11 @@ const buildOptimisticOperation = async (
 
   const txNonce = await getAccountNonce(account.freshAddress);
 
+  const delegationAmount = getDelegationOperationAmount(
+    account.freshAddress,
+    transaction
+  );
+
   const operation: Operation = {
     id: encodeOperationId(account.id, "", type),
     hash: "",
@@ -72,6 +78,7 @@ const buildOptimisticOperation = async (
     date: new Date(),
     extra: {
       data: transaction.data,
+      amount: delegationAmount,
     },
   };
   return operation;
