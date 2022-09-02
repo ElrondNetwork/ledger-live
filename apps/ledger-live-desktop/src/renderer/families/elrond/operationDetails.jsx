@@ -81,7 +81,7 @@ const OperationDetailsDelegation = (props: OperationDetailsDelegationProps) => {
               <Trans
                 i18nKey="operationDetails.extra.votesAddress"
                 values={{
-                  votes: `${denominate({ input: operation.value, decimals: 6 })} ${
+                  votes: `${denominate({ input: operation.extra.amount, decimals: 6 })} ${
                     constants.egldLabel
                   }`,
                   name: formattedValidator
@@ -140,7 +140,11 @@ const OperationDetailsExtra = (props: OperationDetailsExtraProps) => {
       if (!providers || providers.length <= 0) return null;
 
       const formattedValidator = providers.find(v => v.contract === operation.contract);
-      const formattedAmount = formatCurrencyUnit(unit, BigNumber(operation.value), formatConfig);
+      const formattedAmount = formatCurrencyUnit(
+        unit,
+        BigNumber(operation.extra.amount),
+        formatConfig,
+      );
 
       ret = (
         <Fragment>
@@ -177,7 +181,11 @@ const OperationDetailsExtra = (props: OperationDetailsExtraProps) => {
       if (!providers || providers.length <= 0) return null;
 
       const formattedValidator = providers.find(v => v.contract === operation.contract);
-      const formattedAmount = formatCurrencyUnit(unit, BigNumber(operation.value), formatConfig);
+      const formattedAmount = formatCurrencyUnit(
+        unit,
+        BigNumber(operation.extra.amount),
+        formatConfig,
+      );
 
       ret = (
         <Fragment>
