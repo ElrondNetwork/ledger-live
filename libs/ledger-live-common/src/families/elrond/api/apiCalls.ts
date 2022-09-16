@@ -1,15 +1,7 @@
-import BigNumber from "bignumber.js";
 import network from "../../../network";
-import { BinaryUtils } from "../utils/binary.utils";
-import {
-  HASH_TRANSACTION,
-  METACHAIN_SHARD,
-  MAX_PAGINATION_SIZE,
-  GAS,
-} from "../constants";
+import { METACHAIN_SHARD, MAX_PAGINATION_SIZE } from "../constants";
 import {
   ElrondDelegation,
-  ElrondProtocolTransaction,
   ElrondProvider,
   ElrondTransferOptions,
   ESDTToken,
@@ -17,7 +9,7 @@ import {
   Transaction,
 } from "../types";
 import { decodeTransaction } from "./sdk";
-import { Operation } from "@ledgerhq/types-live";
+import { SignedOperation } from "@ledgerhq/types-live";
 export default class ElrondApi {
   private API_URL: string;
   private DELEGATION_API_URL: string;
@@ -79,63 +71,10 @@ export default class ElrondApi {
     };
   }
 
-  async submit(operation: Operation, signature: string): Promise<string> {
-    const networkConfig: NetworkInfo = await this.getNetworkConfig();
-    const { chainID, gasPrice } = networkConfig;
-    let gasLimit = networkConfig.gasLimit;
-
-    const {
-      senders: [sender],
-      recipients: [receiver],
-      transactionSequenceNumber: nonce,
-      extra: { data },
-    } = operation;
-    let { value } = operation;
-
-    if (data) {
-      const dataDecoded = BinaryUtils.base64Decode(data);
-
-      const funcName: string = dataDecoded.split("@")[0];
-      switch (funcName) {
-        case "ESDTTransfer":
-          value = new BigNumber(0);
-          gasLimit = GAS.ESDT_TRANSFER;
-          break;
-        case "delegate":
-          gasLimit = GAS.DELEGATE;
-          break;
-        case "claimRewards":
-          value = new BigNumber(0);
-          gasLimit = GAS.CLAIM;
-          break;
-        case "withdraw":
-          value = new BigNumber(0);
-          gasLimit = GAS.DELEGATE;
-          break;
-        case "reDelegateRewards":
-          value = new BigNumber(0);
-          gasLimit = GAS.DELEGATE;
-          break;
-        case "unDelegate":
-          value = new BigNumber(0);
-          gasLimit = GAS.DELEGATE;
-          break;
-        default:
-          throw new Error(`Invalid function name ${funcName}`);
-      }
-    }
-
-    const transaction: ElrondProtocolTransaction = {
-      nonce: nonce ?? 0,
-      value: value.toString(),
-      receiver,
-      sender,
-      gasPrice,
-      gasLimit,
-      chainID,
-      signature,
-      data,
-      ...HASH_TRANSACTION,
+  async submit(signedOperation: SignedOperation): Promise<string> {
+    const transaction = {
+      ...signedOperation.signatureRaw,
+      signature: signedOperation.signature,
     };
 
     const {

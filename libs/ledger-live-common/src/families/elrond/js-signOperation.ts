@@ -12,6 +12,7 @@ import {
   Account,
   Operation,
   OperationType,
+  SignedOperation,
   SignOperationEvent,
 } from "@ledgerhq/types-live";
 import { getAccountNonce } from "./api";
@@ -159,7 +160,8 @@ const signOperation = ({
             operation,
             signature: r,
             expirationDate: null,
-          },
+            signatureRaw: JSON.parse(unsignedTx),
+          } as SignedOperation,
         });
       }
 

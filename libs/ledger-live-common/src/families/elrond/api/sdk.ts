@@ -7,7 +7,11 @@ import {
   ESDTToken,
   Transaction,
 } from "../types";
-import type { Operation, OperationType } from "@ledgerhq/types-live";
+import type {
+  Operation,
+  OperationType,
+  SignedOperation,
+} from "@ledgerhq/types-live";
 import { getEnv } from "../../../env";
 import { encodeOperationId } from "../../../operation";
 import {
@@ -295,10 +299,9 @@ export const getFees = async (t: Transaction): Promise<BigNumber> => {
  * Broadcast blob to blockchain
  */
 export const broadcastTransaction = async (
-  operation: Operation,
-  signature: string
+  signedOperation: SignedOperation
 ): Promise<string> => {
-  return await api.submit(operation, signature);
+  return await api.submit(signedOperation);
 };
 
 export const decodeTransaction = (transaction: any): Transaction => {
