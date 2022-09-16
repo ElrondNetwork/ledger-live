@@ -303,21 +303,3 @@ export const broadcastTransaction = async (
 ): Promise<string> => {
   return await api.submit(signedOperation);
 };
-
-export const decodeTransaction = (transaction: any): Transaction => {
-  if (!transaction.action) {
-    return transaction;
-  }
-
-  if (!transaction.action.category) {
-    return transaction;
-  }
-
-  if (transaction.action.category !== "stake") {
-    return transaction;
-  }
-
-  transaction.mode = transaction.action.name;
-
-  return transaction;
-};

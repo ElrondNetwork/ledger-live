@@ -3,13 +3,32 @@ import { METACHAIN_SHARD, MAX_PAGINATION_SIZE } from "../constants";
 import {
   ElrondDelegation,
   ElrondProvider,
+  ElrondTransactionAction,
   ElrondTransferOptions,
   ESDTToken,
   NetworkInfo,
   Transaction,
 } from "../types";
-import { decodeTransaction } from "./sdk";
 import { SignedOperation } from "@ledgerhq/types-live";
+
+const decodeTransactionMode = (action: ElrondTransactionAction): string => {
+  if (!action) {
+    return "send";
+  }
+
+  if (!action.category) {
+    return "send";
+  }
+
+  if (action.category !== "stake") {
+    return "send";
+  }
+
+  const mode = action.name;
+
+  return mode;
+};
+
 export default class ElrondApi {
   private API_URL: string;
   private DELEGATION_API_URL: string;
@@ -100,14 +119,14 @@ export default class ElrondApi {
     let from = 0;
     let before = Math.floor(Date.now() / 1000);
     while (from < transactionsCount) {
-      let { data: transactions } = await network({
+      const { data: transactions } = await network({
         method: "GET",
         url: `${this.API_URL}/accounts/${addr}/transactions?after=${startAt}&before=${before}&size=${MAX_PAGINATION_SIZE}&withOperations=true&withScResults=true`,
       });
 
-      transactions = transactions.map((transaction) =>
-        decodeTransaction(transaction)
-      );
+      for (const transaction of transactions) {
+        transaction.mode = decodeTransactionMode(transaction);
+      }
 
       allTransactions = [...allTransactions, ...transactions];
 
