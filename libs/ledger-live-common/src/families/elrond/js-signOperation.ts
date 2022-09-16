@@ -80,7 +80,6 @@ const buildOptimisticOperation = (
     transactionSequenceNumber: unsignedTx.nonce,
     date: new Date(),
     extra: {
-      data: transaction.data,
       amount: delegationAmount,
     },
   };
