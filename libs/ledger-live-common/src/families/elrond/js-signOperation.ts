@@ -1,7 +1,11 @@
 import { BigNumber } from "bignumber.js";
 import { Observable } from "rxjs";
 import { FeeNotLoaded } from "@ledgerhq/errors";
-import type { ElrondTransactionMode, Transaction } from "./types";
+import type {
+  ElrondProtocolTransaction,
+  ElrondTransactionMode,
+  Transaction,
+} from "./types";
 import { withDevice } from "../../hw/deviceAccess";
 import { encodeOperationId } from "../../operation";
 import Elrond from "./hw-app-elrond";
@@ -15,7 +19,6 @@ import {
   SignedOperation,
   SignOperationEvent,
 } from "@ledgerhq/types-live";
-import { getAccountNonce } from "./api";
 import { getDelegationOperationAmount } from "./api/sdk";
 
 function getOptimisticOperationType(
@@ -37,11 +40,12 @@ function getOptimisticOperationType(
   }
 }
 
-const buildOptimisticOperation = async (
+const buildOptimisticOperation = (
   account: Account,
   transaction: Transaction,
-  fee: BigNumber
-): Promise<Operation> => {
+  fee: BigNumber,
+  unsignedTx: ElrondProtocolTransaction
+): Operation => {
   const type = getOptimisticOperationType(transaction.mode);
   const tokenAccount =
     (transaction.subAccountId &&
@@ -56,8 +60,6 @@ const buildOptimisticOperation = async (
   if (tokenAccount) {
     value = transaction.amount;
   }
-
-  const txNonce = await getAccountNonce(account.freshAddress);
 
   const delegationAmount = getDelegationOperationAmount(
     account.freshAddress,
@@ -75,13 +77,14 @@ const buildOptimisticOperation = async (
     senders: [account.freshAddress],
     recipients: [transaction.recipient].filter(Boolean),
     accountId: account.id,
-    transactionSequenceNumber: txNonce.valueOf(),
+    transactionSequenceNumber: unsignedTx.nonce,
     date: new Date(),
     extra: {
       data: transaction.data,
       amount: delegationAmount,
     },
   };
+
   return operation;
 };
 
@@ -149,10 +152,11 @@ const signOperation = ({
           type: "device-signature-granted",
         });
 
-        const operation = await buildOptimisticOperation(
+        const operation = buildOptimisticOperation(
           account,
           transaction,
-          transaction.fees ?? new BigNumber(0)
+          transaction.fees ?? new BigNumber(0),
+          JSON.parse(unsignedTx)
         );
         o.next({
           type: "signed",
