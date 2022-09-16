@@ -43,7 +43,6 @@ const getAccountShape: GetAccountShape = async (info) => {
   const hasTokens = await hasESDTTokens(address);
   if (hasTokens) {
     const tokenAccounts = await elrondBuildESDTTokenAccounts({
-      currency,
       accountId: accountId,
       accountAddress: address,
       existingAccount: initialAccount,

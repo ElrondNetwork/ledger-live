@@ -160,7 +160,7 @@ export default class ElrondApi {
     let allTokenTransactions: Transaction[] = [];
     let from = 0;
     let before = Math.floor(Date.now() / 1000);
-    while (from <= tokenTransactionsCount) {
+    while (from < tokenTransactionsCount) {
       const { data: tokenTransactions } = await network({
         method: "GET",
         url: `${this.API_URL}/accounts/${addr}/transactions?token=${token}&before=${before}&after=${startAt}&size=${MAX_PAGINATION_SIZE}`,
@@ -185,9 +185,10 @@ export default class ElrondApi {
       url: `${this.API_URL}/accounts/${addr}/tokens/count`,
     });
 
-    let allTokens: ESDTToken[] = [];
+    let allTokens: any[] = [];
+
     let from = 0;
-    while (from <= tokensCount) {
+    while (from < tokensCount) {
       const { data: tokens } = await network({
         method: "GET",
         url: `${this.API_URL}/accounts/${addr}/tokens?from=${from}&size=${MAX_PAGINATION_SIZE}`,
@@ -198,7 +199,16 @@ export default class ElrondApi {
       from = from + MAX_PAGINATION_SIZE;
     }
 
-    return allTokens;
+    const supportedTokens: ESDTToken[] = [];
+    for (const token of allTokens) {
+      if (token.assets && token.assets.ledgerSignature) {
+        token.ledgerSignature = token.assets.ledgerSignature;
+
+        supportedTokens.push(token);
+      }
+    }
+
+    return supportedTokens;
   }
 
   async getESDTTokensCountForAddress(addr: string): Promise<number> {

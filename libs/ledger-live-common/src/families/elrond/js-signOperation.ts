@@ -10,7 +10,6 @@ import { withDevice } from "../../hw/deviceAccess";
 import { encodeOperationId } from "../../operation";
 import Elrond from "./hw-app-elrond";
 import { buildTransaction } from "./js-buildTransaction";
-import { findTokenById } from "@ledgerhq/cryptoassets";
 import { CHAIN_ID } from "./constants";
 import {
   Account,
@@ -108,19 +107,21 @@ const signOperation = ({
         // Collect data for an ESDT transfer
         const { subAccounts } = account;
         const { subAccountId } = transaction;
-        const tokenAccount = !subAccountId
+        const subAccount = !subAccountId
           ? null
           : subAccounts && subAccounts.find((ta) => ta.id === subAccountId);
 
         const elrond = new Elrond(transport);
         await elrond.setAddress(account.freshAddressPath);
 
-        if (tokenAccount) {
-          const tokenIdentifier = tokenAccount.id.split("+")[1];
-          const token = findTokenById(`${tokenIdentifier}`);
+        if (subAccount && subAccount.type === "TokenAccount") {
+          const token = subAccount.token;
 
           if (token?.name && token.id && token.ledgerSignature) {
-            const collectionIdentifierHex = token.id.split("/")[2];
+            const collectionIdentifierHex = Buffer.from(
+              token.id.split("/")[2]
+            ).toString("hex");
+
             await elrond.provideESDTInfo(
               token.name,
               collectionIdentifierHex,
@@ -133,7 +134,7 @@ const signOperation = ({
 
         const unsignedTx: string = await buildTransaction(
           account,
-          tokenAccount,
+          subAccount,
           transaction
         );
 

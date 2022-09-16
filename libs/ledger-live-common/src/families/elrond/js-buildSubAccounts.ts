@@ -1,13 +1,11 @@
-import {
-  findTokenById,
-  listTokensForCryptoCurrency,
-} from "@ledgerhq/cryptoassets";
-import { CryptoCurrency, TokenCurrency } from "@ledgerhq/types-cryptoassets";
+import { getCryptoCurrencyById } from "@ledgerhq/cryptoassets";
+import { TokenCurrency } from "@ledgerhq/types-cryptoassets";
 import { Account, SyncConfig, TokenAccount } from "@ledgerhq/types-live";
 import BigNumber from "bignumber.js";
 import { emptyHistoryCache } from "../../account";
 import { mergeOps } from "../../bridge/jsHelpers";
 import { getAccountESDTOperations, getAccountESDTTokens } from "./api";
+import { ESDTToken } from "./types";
 
 async function buildElrondESDTTokenAccount({
   parentAccountId,
@@ -22,8 +20,7 @@ async function buildElrondESDTTokenAccount({
 }) {
   const extractedId = token.id;
   const id = parentAccountId + "+" + extractedId;
-  const tokenIdentifierHex = token.id.split("/")[2];
-  const tokenIdentifier = Buffer.from(tokenIdentifierHex, "hex").toString();
+  const tokenIdentifier = token.id.split("/")[2];
 
   const operations = await getAccountESDTOperations(
     parentAccountId,
@@ -64,8 +61,7 @@ async function syncESDTTokenAccountOperations(
     : 0;
 
   const extractedId = tokenAccount.token.id;
-  const tokenIdentifierHex = extractedId.split("/")[2];
-  const tokenIdentifier = Buffer.from(tokenIdentifierHex, "hex").toString();
+  const tokenIdentifier = extractedId.split("/")[2];
 
   // Merge new operations with the previously synced ones
   const newOperations = await getAccountESDTOperations(
@@ -82,23 +78,41 @@ async function syncESDTTokenAccountOperations(
   return tokenAccount;
 }
 
+function convertESDTToToken(esdt: ESDTToken): TokenCurrency {
+  const ELROND_ESDT_CONTRACT =
+    "erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzllls8a5w6u";
+
+  return {
+    type: "TokenCurrency",
+    id: `elrond/esdt/${esdt.identifier}`,
+    contractAddress: ELROND_ESDT_CONTRACT,
+    ledgerSignature: esdt.ledgerSignature,
+    parentCurrency: getCryptoCurrencyById("elrond"),
+    tokenType: "esdt",
+    name: esdt.name,
+    ticker: esdt.ticker,
+    units: [
+      {
+        name: esdt.name,
+        code: esdt.ticker,
+        magnitude: esdt.decimals,
+      },
+    ],
+  };
+}
+
 async function elrondBuildESDTTokenAccounts({
-  currency,
   accountId,
   accountAddress,
   existingAccount,
   syncConfig,
 }: {
-  currency: CryptoCurrency;
   accountId: string;
   accountAddress: string;
   existingAccount: Account | null | undefined;
   syncConfig: SyncConfig;
 }): Promise<TokenAccount[] | undefined> {
   const { blacklistedTokenIds = [] } = syncConfig;
-  if (listTokensForCryptoCurrency(currency).length === 0) {
-    return undefined;
-  }
 
   const tokenAccounts: TokenAccount[] = [];
 
@@ -121,8 +135,7 @@ async function elrondBuildESDTTokenAccounts({
 
   const accountESDTs = await getAccountESDTTokens(accountAddress);
   for (const esdt of accountESDTs) {
-    const esdtIdentifierHex = Buffer.from(esdt.identifier).toString("hex");
-    const token = findTokenById(`elrond/esdt/${esdtIdentifierHex}`);
+    const token: TokenCurrency = convertESDTToToken(esdt);
 
     if (token && !blacklistedTokenIds.includes(token.id)) {
       let tokenAccount = existingAccountByTicker[token.ticker];

@@ -134,6 +134,9 @@ export type ESDTToken = {
   identifier: string;
   name: string;
   balance: string;
+  ticker: string;
+  decimals: number;
+  ledgerSignature: string;
 };
 
 /**
