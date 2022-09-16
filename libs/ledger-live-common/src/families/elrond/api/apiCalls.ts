@@ -125,7 +125,7 @@ export default class ElrondApi {
       });
 
       for (const transaction of transactions) {
-        transaction.mode = decodeTransactionMode(transaction);
+        transaction.mode = decodeTransactionMode(transaction.action);
       }
 
       allTransactions = [...allTransactions, ...transactions];
