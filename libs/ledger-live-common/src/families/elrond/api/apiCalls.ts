@@ -149,11 +149,12 @@ export default class ElrondApi {
 
   async getESDTTransactionsForAddress(
     addr: string,
-    token: string
+    token: string,
+    startAt: number
   ): Promise<Transaction[]> {
     const { data: tokenTransactionsCount } = await network({
       method: "GET",
-      url: `${this.API_URL}/accounts/${addr}/transactions/count?token=${token}`,
+      url: `${this.API_URL}/accounts/${addr}/transactions/count?token=${token}&after=${startAt}`,
     });
 
     let allTokenTransactions: Transaction[] = [];
@@ -162,7 +163,7 @@ export default class ElrondApi {
     while (from <= tokenTransactionsCount) {
       const { data: tokenTransactions } = await network({
         method: "GET",
-        url: `${this.API_URL}/accounts/${addr}/transactions?token=${token}&before=${before}&size=${MAX_PAGINATION_SIZE}`,
+        url: `${this.API_URL}/accounts/${addr}/transactions?token=${token}&before=${before}&after=${startAt}&size=${MAX_PAGINATION_SIZE}`,
       });
 
       allTokenTransactions = [...allTokenTransactions, ...tokenTransactions];

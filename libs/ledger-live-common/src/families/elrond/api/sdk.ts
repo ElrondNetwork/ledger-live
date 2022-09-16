@@ -265,11 +265,13 @@ export const hasESDTTokens = async (address: string): Promise<boolean> => {
 export const getAccountESDTOperations = async (
   accountId: string,
   address: string,
-  tokenIdentifier: string
+  tokenIdentifier: string,
+  startAt: number
 ): Promise<Operation[]> => {
   const accountESDTTransactions = await api.getESDTTransactionsForAddress(
     address,
-    tokenIdentifier
+    tokenIdentifier,
+    startAt
   );
 
   return accountESDTTransactions.map((transaction) =>
