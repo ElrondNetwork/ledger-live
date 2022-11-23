@@ -206,6 +206,7 @@ const AssetScreen = ({ route }: NavigationProps) => {
             <SectionContainer px={6} isLast>
               <SectionTitle title={t("analytics.operations.title")} />
               <OperationsHistorySection accounts={cryptoAccounts} />
+              {console.log(cryptoAccounts[0].operations)}
             </SectionContainer>,
           ]
         : []),
