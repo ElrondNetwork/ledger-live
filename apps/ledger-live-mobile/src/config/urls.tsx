@@ -1,6 +1,5 @@
 export const urls = {
-  faq:
-    "https://support.ledgerwallet.com/hc/en-us?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=faq",
+  faq: "https://support.ledgerwallet.com/hc/en-us?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=faq",
   contact:
     "https://support.ledger.com/hc/en-us/requests/new?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=contact",
   terms: {
@@ -10,17 +9,12 @@ export const urls = {
     de: "https://shop.ledger.com/pages/nutzungsbedingungen-von-ledger-live",
   },
   privacyPolicy: {
-    en:
-      "https://shop.ledger.com/pages/privacy-policy?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
-    fr:
-      "https://shop.ledger.com/pages/politique-de-confidentialite?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
-    es:
-      "https://shop.ledger.com/pages/politica-de-privacidad?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
-    ru:
-      "https://shop.ledger.com/pages/nasha-politika-konfidentsialnosti?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
+    en: "https://shop.ledger.com/pages/privacy-policy?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
+    fr: "https://shop.ledger.com/pages/politique-de-confidentialite?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
+    es: "https://shop.ledger.com/pages/politica-de-privacidad?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
+    ru: "https://shop.ledger.com/pages/nasha-politika-konfidentsialnosti?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
     // TODO: Add the correct zh link
-    zh:
-      "https://shop.ledger.com/pages/privacy-policy?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
+    zh: "https://shop.ledger.com/pages/privacy-policy?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=privacy",
   },
   buyNanoX:
     "https://shop.ledger.com/products/ledger-nano-x?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=onboarding",
@@ -66,8 +60,7 @@ export const urls = {
       "https://support.ledger.com/hc/en-us/articles/360013062159?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=receive_account_flow_trc10",
     trc20:
       "https://support.ledger.com/hc/en-us/articles/360013062159?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=receive_account_flow_trc20",
-    asa:
-      "https://support.ledger.com/hc/en-us/articles/360015896040?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=receive_account_flow",
+    asa: "https://support.ledger.com/hc/en-us/articles/360015896040?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=receive_account_flow",
     bep20:
       "https://support.ledger.com/hc/en-us/articles/4412962166289-Manage-BEP20-tokens?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=receive_account_flow_bep20",
   },
@@ -78,11 +71,13 @@ export const urls = {
   algorandStaking:
     "https://support.ledger.com/hc/en-us/articles/360015897740?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=algorand",
   polkadotStaking:
-    "https://support.ledger.com/hc/en-us/articles/360019187260?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=polkadot",
-  elrondStaking: "https://everstake.one/elrond",
+    "https://support.ledger.com/hc/en-us/articles/360018131260-Earning-Polkadot-DOT-bonding-rewards?docs=true&utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=polkadot",
+  elrondStaking:
+    "https://support.ledger.com/hc/en-us/articles/360016750819-Elrond-EGLD-?docs=true",
+  nearStakingRewards:
+    "https://support.ledger.com/hc/en-us/articles/360020450619-NEAR-NEAR-?docs=true",
   swap: {
-    info:
-      "https://www.ledger.com/swap?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=swap_intro",
+    info: "https://www.ledger.com/swap?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=swap_intro",
     learnMore:
       "https://www.ledger.com/swap?utm_source=ledger_live_mobile&utm_medium=self_referral&utm_content=swap_form",
     providers: {
@@ -157,8 +152,7 @@ export const urls = {
   discover: {
     ledgerApps:
       "https://support.ledger.com/hc/en-us/articles/4404599625233-Discover-Live-Apps?docs=true&utm_source=ledger_live&utm_medium=self_referral&utm_content=discover",
-    earn:
-      "https://www.ledger.com/staking?utm_source=ledger_live&utm_medium=self_referral&utm_content=discover",
+    earn: "https://www.ledger.com/staking?utm_source=ledger_live&utm_medium=self_referral&utm_content=discover",
     academy:
       "https://www.ledger.com/academy?utm_source=ledger_live&utm_medium=self_referral&utm_content=discover",
     tellMeMore:

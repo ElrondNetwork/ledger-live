@@ -54,8 +54,8 @@ export default function AccountSubHeader({ family, team }: { family: string, tea
           <InfoCircle size={12} />
           <CardHeader>{t("account.subHeader.cardTitle", { team })}</CardHeader>
         </CardHeaderContainer>
-        <CustomButton outline={true} onClick={openDrawer}>
-          <Box horizontal={true} flow={1} alignItems="center">
+        <CustomButton outline onClick={openDrawer}>
+          <Box horizontal flow={1} alignItems="center">
             <Box fontSize={3}>
               <Trans i18nKey="account.subHeader.moreInfo" />
             </Box>

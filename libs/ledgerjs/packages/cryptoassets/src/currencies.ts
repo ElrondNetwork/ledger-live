@@ -902,17 +902,17 @@ const cryptocurrenciesById: Record<string, CryptoCurrency> = {
     type: "CryptoCurrency",
     id: "elrond",
     coinType: 508,
-    name: "Elrond",
-    managerAppName: "Elrond",
+    name: "MultiversX",
+    managerAppName: "MultiversX",
     ticker: "EGLD",
     scheme: "elrond",
-    color: "#1b46c2",
+    color: "#23F7DD",
     family: "elrond",
     blockAvgTime: 6,
     units: [
       {
         name: "EGLD",
-        code: "egld",
+        code: "EGLD",
         magnitude: 18,
       },
     ],
@@ -3331,8 +3331,8 @@ export function listCryptoCurrencies(
       ? cryptocurrenciesArray
       : prodCryptoArray
     : withDevCrypto
-    ? cryptocurrenciesArrayWithoutTerminated
-    : prodCryptoArrayWithoutTerminated;
+      ? cryptocurrenciesArrayWithoutTerminated
+      : prodCryptoArrayWithoutTerminated;
 }
 
 /**
@@ -3382,17 +3382,34 @@ export function findCryptoCurrencyById(
 export const findCryptoCurrencyByKeyword = (
   keyword: string
 ): CryptoCurrency | null | undefined => {
-  const r = findCryptoCurrency((c) => {
-    const search = keyword.replace(/ /, "").toLowerCase();
-    return (
-      c.id === search ||
-      c.name.replace(/ /, "").toLowerCase() === search ||
-      (c.managerAppName &&
-        c.managerAppName.replace(/ /, "").toLowerCase() === search) ||
-      c.ticker.toLowerCase() === search
-    );
-  });
-  return r;
+  const search = keyword.replace(/ /, "").toLowerCase();
+
+  const conditions: Array<(string) => CryptoCurrency | null | undefined> =
+    tests.map((t) => testsMap[t]);
+
+  for (const condition of conditions) {
+    const currency = condition(search);
+
+    if (currency) {
+      return currency;
+    }
+  }
+};
+
+export const findCryptoCurrencyByManagerAppName = (
+  managerAppName: string
+): CryptoCurrency | null | undefined => {
+  const search = managerAppName.replace(/ /, "").toLowerCase();
+
+  return (
+    findCryptoCurrency((c) => c.managerAppName === managerAppName) ||
+    findCryptoCurrency((c) =>
+      Boolean(
+        c.managerAppName &&
+        c.managerAppName.replace(/ /, "").toLowerCase() === search
+      )
+    )
+  );
 };
 
 /**

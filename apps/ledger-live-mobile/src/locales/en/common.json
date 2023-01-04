@@ -386,6 +386,19 @@
       "title": "Sorry, no account was found",
       "description": "Something went wrong with the address calculation. Please try again. If the problem persists, please save your logs using the button below and provide them to Ledger Support."
     },
+    "ElrondDecimalsLimitReached": {
+      "title": "Maximum decimals limit reached",
+      "description": "Please make sure that the amount provided has 18 decimals."
+    },
+    "ElrondMinDelegatedAmountError": {
+      "title": "Delegated amount must be at least {{formattedAmount}}"
+    },
+    "ElrondMinUndelegatedAmountError": {
+      "title": "Undelegated amount must be at least {{formattedAmount}}"
+    },
+    "ElrondDelegationBelowMinimumError": {
+      "title": "Remaining delegation can't be less than {{formattedAmount}}"
+    },
     "NotEnoughBalance": {
       "title": "Sorry, insufficient funds",
       "description": "Please make sure the account has enough funds."
@@ -603,7 +616,7 @@
       "title": "You must bond at least {{minimumBondAmount}}."
     },
     "PolkadotBondMinimumAmountWarning": {
-      "title": "You bonded balance should be at least {{minimumBondBalance}}."
+      "title": "Your bonded balance should be at least {{minimumBondBalance}}."
     },
     "PolkadotMaxUnbonding": {
       "title": "You have exceeded the unbond limit"
@@ -3414,19 +3427,6 @@
       }
     }
   },
-  "cryptoOrg": {
-    "account": {
-      "subHeader": {
-        "cardTitle": "Powered by Crypto.org",
-        "moreInfo": "More info",
-        "drawerTitle": "Crypto.org integration",
-        "title": "The Crypto.org (CRO) token is now available on Ledger Live",
-        "description": "You can now start to manage your Crypto.org (CRO) tokens and secure them through Ledger Live.",
-        "description2": "The Crypto.org (CRO) token is native to the Crypto.org chain and is used for everything from transactions, staking and many upcoming features.",
-        "website": "Cryptocurrency in every wallet"
-      }
-    }
-  },
   "elrond": {
     "info": {
       "available": {
@@ -3446,18 +3446,6 @@
         "description": "Not enough available balance in your account to start a new delegation."
       }
     },
-    "account": {
-      "subHeader": {
-        "cardTitle": "Powered by Elrond",
-        "drawerTitle": "Elrond integration",
-        "moreInfo": "More info",
-        "title": "Elrond eGold (EGLD) token is now available on Ledger Live",
-        "description": "You can now safely secure your eGold (EGLD) tokens and manage them through Ledger Live.",
-        "description2": "The Elrond eGold (EGLD) Token is native to the Elrond Network and will be used for everything from transactions, staking, smart contracts, governance and validator rewards.",
-        "description3": "We are actively working with the Elrond team to add more functionality, such as staking, native ESDT (Elrond Standard Digital Token) support, and more.",
-        "website": "The Internet Scale Blockchain"
-      }
-    },
     "delegation": {
       "delegationEarn": "Stake your EGLD to secure the network and capture your share of the rewards.",
       "info": "What is staking and how does it work?",
@@ -3469,6 +3457,9 @@
       "delegate": "Restake",
       "undelegate": "Unstake",
       "reward": "Claim rewards",
+      "commission": "Commission",
+      "iDelegate": "I delegate",
+      "totalStake": "Total stake",
       "stepperHeader": {
         "starter": "Earn rewards",
         "validator": "Delegate assets",
@@ -3531,7 +3522,8 @@
         "active": "Active",
         "inactive": "Inactive",
         "completionDate": "Completion date",
-        "redelegatedFrom": "Redelegated from"
+        "redelegatedFrom": "Redelegated from",
+        "completionDateHit": "Completed"
       }
     },
     "claimRewards": {
@@ -3559,8 +3551,8 @@
           },
           "verification": {
             "success": {
-              "title": "You have successfully claimed your rewards. They were added to your available balance.",
-              "titleCompound": "Your rewards were staked to the same Staking Provider.",
+              "claimRewardsSuccess": "You have successfully claimed your rewards. They were added to your available balance.",
+              "reDelegateRewardsSuccess": "Your rewards were staked to the same Staking Provider.",
               "text": "Your account balance will be updated when the network confirms the transaction.",
               "cta": "View details"
             },
@@ -3583,7 +3575,11 @@
       "flow": {
         "steps": {
           "amount": {
-            "allAssetsUsed": "All assets unstaked"
+            "allAssetsUsed": "All assets selected",
+            "assetsRemaining": "Assets remaining delegated: <0>{{amount}}</0>",
+            "minAmount": "Minimum amount: <0>{{min}}</0>",
+            "incorrectAmount": "Maximum amount: <0>{{max}}</0>",
+            "minRemaining": "Minimum remaining: <0>{{min}}</0>"
           },
           "verification": {
             "success": {
@@ -3620,7 +3616,6 @@
           "verification": {
             "success": {
               "title": "You have successfully claimed your rewards. They were added to your available balance.",
-              "titleCompound": "Your rewards were staked to the Staking Provider.",
               "text": "Your account balance will be updated when the network confirms the transaction.",
               "cta": "View details"
             },

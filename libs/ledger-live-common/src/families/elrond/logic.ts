@@ -1,9 +1,11 @@
-import type { Account, SubAccount } from "../../types";
-import type { Transaction } from "./types";
-import * as bech32 from "bech32";
+import { decode, fromWords } from "bech32";
 import BigNumber from "bignumber.js";
-import { buildTransaction } from "./js-buildTransaction";
-import getEstimatedFees from "./js-getFeesForTransaction";
+import type { Account } from "@ledgerhq/types-live";
+import type {
+  Transaction,
+  ElrondTransactionMode,
+  ElrondDelegation,
+} from "./types";
 
 /**
  * The human-readable-part of the bech32 addresses.
@@ -19,7 +21,7 @@ function fromBech32(value: string): string {
   let decoded;
 
   try {
-    decoded = bech32.decode(value);
+    decoded = decode(value);
   } catch (err) {
     throw new Error("Erd address can't be created");
   }
@@ -29,7 +31,7 @@ function fromBech32(value: string): string {
     throw new Error("Bad HRP");
   }
 
-  const pubkey = Buffer.from(bech32.fromWords(decoded.words));
+  const pubkey = Buffer.from(fromWords(decoded.words));
   if (pubkey.length != PUBKEY_LENGTH) {
     throw new Error("Erd address can't be created");
   }
@@ -54,50 +56,35 @@ export const isSelfTransaction = (a: Account, t: Transaction): boolean => {
   return t.recipient === a.freshAddress;
 };
 
-/**
- * Returns nonce for an account
- *
- * @param {Account} a
- */
-export const getNonce = (a: Account): number => {
-  const lastPendingOp = a.pendingOperations[0];
-  const nonce = Math.max(
-    a.elrondResources?.nonce || 0,
-    lastPendingOp && typeof lastPendingOp.transactionSequenceNumber === "number"
-      ? lastPendingOp.transactionSequenceNumber + 1
-      : 0
-  );
-  return nonce;
+// For some transaction modes the amount doesn't belong to the account's balance
+export const isAmountSpentFromBalance = (mode: ElrondTransactionMode) => {
+  return ["send", "delegate"].includes(mode);
 };
 
-export const computeTransactionValue = async (
-  t: Transaction,
-  a: Account,
-  ta: SubAccount | null
-): Promise<{
-  amount: BigNumber;
-  totalSpent: BigNumber;
-  estimatedFees: BigNumber;
-}> => {
-  let amount, totalSpent;
+export const computeDelegationBalance = (
+  delegations: ElrondDelegation[]
+): BigNumber => {
+  let totalDelegationBalance = new BigNumber(0);
 
-  await buildTransaction(a, ta, t);
+  for (const delegation of delegations) {
+    let delegationBalance = new BigNumber(delegation.userActiveStake).plus(
+      new BigNumber(delegation.claimableRewards)
+    );
 
-  const estimatedFees = await getEstimatedFees(t);
+    for (const undelegation of delegation.userUndelegatedList) {
+      delegationBalance = delegationBalance.plus(
+        new BigNumber(undelegation.amount)
+      );
+    }
 
-  if (ta) {
-    amount = t.useAllAmount ? ta.balance : t.amount;
-
-    totalSpent = amount;
-  } else {
-    totalSpent = t.useAllAmount
-      ? a.balance
-      : new BigNumber(t.amount).plus(estimatedFees);
-
-    amount = t.useAllAmount
-      ? a.balance.minus(estimatedFees)
-      : new BigNumber(t.amount);
+    totalDelegationBalance = totalDelegationBalance.plus(delegationBalance);
   }
 
-  return { amount, totalSpent, estimatedFees };
+  return totalDelegationBalance;
+};
+
+export const addPrefixToken = (tokenId: string) => `elrond/esdt/${tokenId}`;
+
+export const extractTokenId = (tokenId: string) => {
+  return tokenId.split("/")[2];
 };

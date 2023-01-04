@@ -1,11 +1,9 @@
 import { BigNumber } from "bignumber.js";
-import type { AccountLike, Account } from "../../types";
+import type { Account, AccountLike } from "@ledgerhq/types-live";
 import { getMainAccount } from "../../account";
 import type { Transaction } from "./types";
+import { getFees } from "./api";
 import { createTransaction } from "./js-transaction";
-import getEstimatedFees from "./js-getFeesForTransaction";
-import { GAS } from "./constants";
-import { ElrondEncodeTransaction } from "./encode";
 
 /**
  * Returns the maximum possible amount for transaction
@@ -22,10 +20,11 @@ const estimateMaxSpendable = async ({
   transaction: Transaction | null | undefined;
 }): Promise<BigNumber> => {
   const mainAccount = getMainAccount(account, parentAccount);
-  const tx = {
+  const tx: Transaction = {
     ...createTransaction(),
     subAccountId: account.type === "Account" ? null : account.id,
     ...transaction,
+    useAllAmount: true,
   };
 
   const tokenAccount =
@@ -37,41 +36,9 @@ const estimateMaxSpendable = async ({
     return tokenAccount.balance;
   }
 
-  switch (tx?.mode) {
-    case "reDelegateRewards":
-      tx.gasLimit = GAS.DELEGATE;
+  const fees = await getFees(tx);
 
-      tx.data = ElrondEncodeTransaction.reDelegateRewards();
-      break;
-    case "withdraw":
-      tx.gasLimit = GAS.DELEGATE;
-
-      tx.data = ElrondEncodeTransaction.withdraw();
-      break;
-    case "unDelegate":
-      tx.gasLimit = GAS.DELEGATE;
-
-      tx.data = ElrondEncodeTransaction.unDelegate(tx);
-      break;
-    case "delegate":
-      tx.gasLimit = GAS.DELEGATE;
-
-      tx.data = ElrondEncodeTransaction.delegate();
-      break;
-
-    case "claimRewards":
-      tx.gasLimit = GAS.CLAIM;
-
-      tx.data = ElrondEncodeTransaction.claimRewards();
-      break;
-
-    default:
-      break;
-  }
-
-  const fees = await getEstimatedFees(tx);
-
-  if (fees.gt(mainAccount.balance)) {
+  if (fees.gt(mainAccount.spendableBalance)) {
     return new BigNumber(0);
   }
 

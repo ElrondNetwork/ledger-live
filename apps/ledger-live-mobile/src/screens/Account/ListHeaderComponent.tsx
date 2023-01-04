@@ -7,14 +7,20 @@ import {
 import {
   AccountLike,
   Account,
-  Currency,
-} from "@ledgerhq/live-common/lib/types";
-import { ValueChange } from "@ledgerhq/live-common/lib/portfolio/v2/types";
-import { CompoundAccountSummary } from "@ledgerhq/live-common/lib/compound/types";
-
-import { Box } from "@ledgerhq/native-ui";
-import { isNFTActive } from "@ledgerhq/live-common/lib/nft";
-
+  ValueChange,
+  PortfolioRange,
+  BalanceHistoryWithCountervalue,
+} from "@ledgerhq/types-live";
+import { Currency } from "@ledgerhq/types-cryptoassets";
+import { CompoundAccountSummary } from "@ledgerhq/live-common/compound/types";
+import { Box, ColorPalette } from "@ledgerhq/native-ui";
+import { isNFTActive } from "@ledgerhq/live-common/nft/index";
+import { TFunction } from "react-i18next";
+import { CosmosAccount } from "@ledgerhq/live-common/families/cosmos/types";
+import { PolkadotAccount } from "@ledgerhq/live-common/families/polkadot/types";
+import { ElrondAccount } from "@ledgerhq/live-common/families/elrond/types";
+import { NearAccount } from "@ledgerhq/live-common/families/near/types";
+import { LayoutChangeEvent } from "react-native";
 import Header from "./Header";
 import AccountGraphCard from "../../components/AccountGraphCard";
 import SubAccountsList from "./SubAccountsList";
@@ -27,37 +33,39 @@ import perFamilyAccountBodyHeader from "../../generated/AccountBodyHeader";
 import perFamilyAccountBalanceSummaryFooter from "../../generated/AccountBalanceSummaryFooter";
 import { FabAccountActions } from "../../components/FabActions";
 
-const renderAccountSummary = (
-  account: AccountLike,
-  parentAccount: Account,
-  compoundSummary: CompoundAccountSummary,
-) => () => {
-  const mainAccount = getMainAccount(account, parentAccount);
-  const AccountBalanceSummaryFooter =
-    perFamilyAccountBalanceSummaryFooter[mainAccount.currency.family];
+const renderAccountSummary =
+  (
+    account: AccountLike,
+    parentAccount: Account,
+    compoundSummary: CompoundAccountSummary,
+  ) =>
+  () => {
+    const mainAccount = getMainAccount(account, parentAccount);
+    const AccountBalanceSummaryFooter =
+      perFamilyAccountBalanceSummaryFooter[mainAccount.currency.family];
 
-  const footers = [];
+    const footers = [];
 
-  if (compoundSummary && account.type === "TokenAccount") {
-    footers.push(
-      <CompoundSummary
-        key="compoundSummary"
-        account={account}
-        compoundSummary={compoundSummary}
-      />,
-    );
-  }
+    if (compoundSummary && account.type === "TokenAccount") {
+      footers.push(
+        <CompoundSummary
+          key="compoundSummary"
+          account={account}
+          compoundSummary={compoundSummary}
+        />,
+      );
+    }
 
-  if (AccountBalanceSummaryFooter)
-    footers.push(
-      <AccountBalanceSummaryFooter
-        account={account}
-        key="accountbalancesummary"
-      />,
-    );
-  if (!footers.length) return null;
-  return footers;
-};
+    if (AccountBalanceSummaryFooter)
+      footers.push(
+        <AccountBalanceSummaryFooter
+          account={account}
+          key="accountbalancesummary"
+        />,
+      );
+    if (!footers.length) return null;
+    return footers;
+  };
 
 type Props = {
   account?: AccountLike;
@@ -106,7 +114,25 @@ export function getListHeaderComponents({
   const AccountSubHeader =
     perFamilyAccountSubHeader[mainAccount.currency.family];
 
-  const stickyHeaderIndices = empty ? [] : [4];
+  const AccountSubHeader = (
+    perFamilyAccountSubHeader as Record<string, MaybeComponent>
+  )[family];
+
+  const AccountBalanceSummaryFooter =
+    perFamilyAccountBalanceSummaryFooter[
+      family as keyof typeof perFamilyAccountBalanceSummaryFooter
+    ];
+  const AccountBalanceSummaryFooterRendered =
+    AccountBalanceSummaryFooter &&
+    AccountBalanceSummaryFooter({
+      account: account as Account &
+        CosmosAccount &
+        PolkadotAccount &
+        ElrondAccount &
+        NearAccount,
+    });
+
+  const stickyHeaderIndices = empty ? [] : [0];
 
   return {
     listHeaderComponents: [

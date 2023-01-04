@@ -1,18 +1,20 @@
-import type { Account, TokenAccount } from "../../types";
 import { encodeAccountId } from "../../account";
 import type { GetAccountShape } from "../../bridge/jsHelpers";
 import { makeSync, makeScanAccounts, mergeOps } from "../../bridge/jsHelpers";
 import {
   getAccount,
   getAccountDelegations,
-  getOperations,
+  getEGLDOperations,
   hasESDTTokens,
 } from "./api";
 import elrondBuildESDTTokenAccounts from "./js-buildSubAccounts";
 import { reconciliateSubAccounts } from "./js-reconciliation";
 import { FEES_BALANCE } from "./constants";
+import { TokenAccount } from "@ledgerhq/types-live";
+import { computeDelegationBalance } from "./logic";
+import BigNumber from "bignumber.js";
 
-const getAccountShape: GetAccountShape = async (info) => {
+const getAccountShape: GetAccountShape = async (info, syncConfig) => {
   const { address, initialAccount, currency, derivationMode } = info;
   const accountId = encodeAccountId({
     type: "js",
@@ -23,13 +25,13 @@ const getAccountShape: GetAccountShape = async (info) => {
   });
   const oldOperations = initialAccount?.operations || [];
   // Needed for incremental synchronisation
-  const startAt = 0;
+  const startAt = oldOperations.length
+    ? Math.floor(oldOperations[0].date.valueOf() / 1000)
+    : 0;
 
-  // get the current account balance state depending your api implementation
   const { blockHeight, balance, nonce } = await getAccount(address);
-  // Merge new operations with the previously synced ones
-  const newOperations = await getOperations(accountId, address, startAt);
-  const operations = mergeOps(oldOperations, newOperations);
+
+  const delegations = await getAccountDelegations(address);
 
   let subAccounts: TokenAccount[] | undefined = [];
   const hasTokens = await hasESDTTokens(address);
@@ -39,9 +41,7 @@ const getAccountShape: GetAccountShape = async (info) => {
       accountId: accountId,
       accountAddress: address,
       existingAccount: initialAccount,
-      syncConfig: {
-        paginationConfig: {},
-      },
+      syncConfig,
     });
 
     if (tokenAccounts) {
@@ -49,14 +49,23 @@ const getAccountShape: GetAccountShape = async (info) => {
     }
   }
 
-  const delegations = await getAccountDelegations(address);
+  const delegationBalance = computeDelegationBalance(delegations);
 
-  const shape = {
+  // Merge new operations with the previously synced ones
+  const newOperations = await getEGLDOperations(
+    accountId,
+    address,
+    startAt,
+    subAccounts
+  );
+  const operations = mergeOps(oldOperations, newOperations);
+
+  return {
     id: accountId,
-    balance,
+    balance: balance.plus(delegationBalance),
     spendableBalance: balance.gt(FEES_BALANCE)
       ? balance.minus(FEES_BALANCE)
-      : balance,
+      : new BigNumber(0),
     operationsCount: operations.length,
     blockHeight,
     elrondResources: {
@@ -64,9 +73,8 @@ const getAccountShape: GetAccountShape = async (info) => {
       delegations,
     },
     subAccounts,
+    operations,
   };
-
-  return { ...shape, operations };
 };
 
 export const scanAccounts = makeScanAccounts({ getAccountShape });

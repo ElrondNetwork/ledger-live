@@ -1,10 +1,25 @@
-import type { BigNumber } from "bignumber.js";
 import type {
+  Account,
+  AccountRaw,
   TransactionCommon,
   TransactionCommonRaw,
-} from "../../types/transaction";
+  TransactionStatusCommon,
+  TransactionStatusCommonRaw,
+} from "@ledgerhq/types-live";
+import BigNumber from "bignumber.js";
+
+export type ElrondAccount = Account & { elrondResources: ElrondResources };
+
+export type ElrondAccountRaw = AccountRaw & {
+  elrondResources: ElrondResourcesRaw;
+};
 
 export type ElrondResources = {
+  nonce: number;
+  delegations: ElrondDelegation[];
+};
+
+export type ElrondResourcesRaw = {
   nonce: number;
   delegations: ElrondDelegation[];
 };
@@ -24,13 +39,39 @@ export type UserUndelegated = {
 };
 
 /**
- * Elrond account resources from raw JSON
+ * Elrond transaction
  */
-export type ElrondResourcesRaw = {
-  nonce: number;
-  delegations: ElrondDelegation[];
+export type Transaction = TransactionCommon & {
+  family: "elrond";
+  mode: ElrondTransactionMode;
+  fees: BigNumber | null | undefined;
+  data?: string;
+  gasLimit: number;
 };
 
+export type TransactionRaw = TransactionCommonRaw & {
+  family: "elrond";
+  mode: ElrondTransactionMode;
+  fees: string | null | undefined;
+  data?: string;
+  gasLimit: number;
+};
+
+export type TransactionStatus = TransactionStatusCommon;
+
+export type TransactionStatusRaw = TransactionStatusCommonRaw;
+
+export type ElrondTransactionMode =
+  | "send"
+  | "delegate"
+  | "reDelegateRewards"
+  | "unDelegate"
+  | "claimRewards"
+  | "withdraw";
+
+/**
+ * Elrond transaction payload to sign
+ */
 export type ElrondProtocolTransaction = {
   nonce: number;
   value: string;
@@ -46,24 +87,12 @@ export type ElrondProtocolTransaction = {
 };
 
 /**
- * Elrond mode of transaction
+ * Elrond transaction as received from explorer
  */
-export type ElrondTransactionMode =
-  | "send"
-  | "delegate"
-  | "reDelegateRewards"
-  | "unDelegate"
-  | "claimRewards"
-  | "withdraw";
-
-/**
- * Elrond transaction
- */
-export type Transaction = TransactionCommon & {
+export type ElrondApiTransaction = {
   mode: ElrondTransactionMode;
-  transfer?: ElrondTransferOptions;
-  family: "elrond";
   fees: BigNumber | null | undefined;
+  transfer?: ElrondTransferOptions;
   txHash?: string;
   sender?: string;
   receiver?: string;
@@ -80,7 +109,8 @@ export type Transaction = TransactionCommon & {
   data?: string;
   tokenIdentifier?: string;
   tokenValue?: string;
-  action?: any;
+  action?: ElrondTransactionAction;
+  operations?: ElrondTransactionOperation[];
 };
 
 export enum ElrondTransferOptions {
@@ -88,33 +118,33 @@ export enum ElrondTransferOptions {
   esdt = "esdt",
 }
 
+export type ElrondTransactionOperation = {
+  action: string;
+  type: string;
+  sender: string;
+  receiver: string;
+  value: string;
+};
+
+export type ElrondTransactionAction = {
+  category: string;
+  name: string;
+  arguments: ElrondTransactionActionArguments;
+};
+
+export type ElrondTransactionActionArguments = {
+  transfers: ElrondTransactionActionArgumentsTransfers[];
+};
+
+export type ElrondTransactionActionArgumentsTransfers = {
+  token: string;
+  value: string;
+};
+
 export type ESDTToken = {
   identifier: string;
   name: string;
   balance: string;
-};
-
-/**
- * Elrond transaction from a raw JSON
- */
-export type TransactionRaw = TransactionCommonRaw & {
-  family: "elrond";
-  mode: ElrondTransactionMode;
-  fees: string | null | undefined;
-  gasLimit: number;
-};
-export type ElrondValidator = {
-  bls: string;
-  identity: string;
-  owner: string;
-  provider: string;
-  type: string;
-  status: string;
-  nonce: number;
-  stake: BigNumber;
-  topUp: BigNumber;
-  locked: BigNumber;
-  online: boolean;
 };
 
 export type NetworkInfo = {
@@ -137,5 +167,43 @@ export type NetworkInfoRaw = {
 };
 
 export type ElrondPreloadData = {
-  validators: Record<string, any>;
+  validators: ElrondProvider[];
+};
+
+/**
+ * Elrond validator
+ */
+export type ElrondProvider = {
+  contract: string;
+  owner: string;
+  serviceFee: string;
+  maxDelegationCap: string;
+  initialOwnerFunds: string;
+  totalActiveStake: string;
+  totalUnstaked: string;
+  maxDelegateAmountAllowed: string;
+  apr: string;
+  explorerURL: string;
+  address: string;
+  aprValue: number;
+  automaticActivation: boolean;
+  changeableServiceFee: boolean;
+  checkCapOnRedelegate: boolean;
+  createdNonce: number;
+  featured: boolean;
+  numNodes: number;
+  numUsers: number;
+  ownerBelowRequiredBalanceThreshold: boolean;
+  unBondPeriod: number;
+  withDelegationCap: boolean;
+  disabled?: boolean;
+  identity: {
+    key: string;
+    name: string;
+    avatar: string;
+    description: string;
+    location?: string;
+    twitter: string;
+    url: string;
+  };
 };

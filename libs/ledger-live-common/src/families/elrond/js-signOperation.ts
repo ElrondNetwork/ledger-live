@@ -1,53 +1,132 @@
 import { BigNumber } from "bignumber.js";
 import { Observable } from "rxjs";
 import { FeeNotLoaded } from "@ledgerhq/errors";
-import type { Transaction } from "./types";
-import type { Account, Operation, SignOperationEvent } from "../../types";
+import { Address } from "@elrondnetwork/erdjs/out";
+import type {
+  ElrondProtocolTransaction,
+  ElrondTransactionMode,
+  Transaction,
+} from "./types";
 import { withDevice } from "../../hw/deviceAccess";
 import { encodeOperationId } from "../../operation";
 import Elrond from "./hw-app-elrond";
-import { buildTransaction } from "./js-buildTransaction";
-import { getNonce } from "./logic";
-import { findTokenById } from "@ledgerhq/cryptoassets";
+import { buildTransactionToSign } from "./js-buildTransaction";
 import { CHAIN_ID } from "./constants";
+import {
+  Account,
+  Operation,
+  OperationType,
+  SignedOperation,
+  SignOperationEvent,
+} from "@ledgerhq/types-live";
+import { BinaryUtils } from "./utils/binary.utils";
+import { decodeTokenAccountId } from "../../account";
+import { extractTokenId } from "./logic";
+
+function getOptimisticOperationType(
+  transactionMode: ElrondTransactionMode
+): OperationType {
+  switch (transactionMode) {
+    case "delegate":
+      return "DELEGATE";
+    case "unDelegate":
+      return "UNDELEGATE";
+    case "withdraw":
+      return "WITHDRAW_UNBONDED";
+    case "claimRewards":
+      return "REWARD";
+    case "reDelegateRewards":
+      return "DELEGATE";
+    default:
+      return "OUT";
+  }
+}
+
+function getOptimisticOperationDelegationAmount(
+  transaction: Transaction
+): BigNumber | undefined {
+  let dataDecoded;
+  switch (transaction.mode) {
+    case "delegate":
+      return transaction.amount;
+
+    case "unDelegate":
+      dataDecoded = BinaryUtils.base64Decode(transaction.data ?? "");
+      return new BigNumber(`0x${dataDecoded.split("@")[1]}`);
+
+    default:
+      return undefined;
+  }
+}
 
 const buildOptimisticOperation = (
   account: Account,
   transaction: Transaction,
-  fee: BigNumber
+  unsignedTx: ElrondProtocolTransaction
 ): Operation => {
-  const type = "OUT";
+  const senders = [account.freshAddress];
+  const recipients = [transaction.recipient];
+  const { subAccountId, fees } = transaction;
+
+  if (!fees) {
+    throw new FeeNotLoaded();
+  }
+
+  const type = getOptimisticOperationType(transaction.mode);
+
   const tokenAccount =
-    (transaction.subAccountId &&
+    (subAccountId &&
       account.subAccounts &&
-      account.subAccounts.find((ta) => ta.id === transaction.subAccountId)) ||
+      account.subAccounts.find((ta) => ta.id === subAccountId)) ||
     null;
 
-  let value = transaction.useAllAmount
-    ? account.balance.minus(fee)
-    : new BigNumber(transaction.amount);
+  const value =
+    tokenAccount || transaction.mode !== "send"
+      ? fees
+      : transaction.amount.plus(transaction.fees || new BigNumber(0));
 
-  if (tokenAccount) {
-    value = transaction.amount;
-  }
+  const delegationAmount = getOptimisticOperationDelegationAmount(transaction);
 
   const operation: Operation = {
     id: encodeOperationId(account.id, "", type),
     hash: "",
     type,
     value,
-    fee,
+    fee: fees,
     blockHash: null,
-    blockHeight: account.blockHeight,
-    senders: [account.freshAddress],
-    recipients: [transaction.recipient].filter(Boolean),
+    blockHeight: null,
+    senders,
+    recipients,
     accountId: account.id,
-    transactionSequenceNumber: getNonce(account),
+    transactionSequenceNumber: unsignedTx.nonce,
     date: new Date(),
+    contract: new Address(transaction.recipient).isContractAddress()
+      ? transaction.recipient
+      : undefined,
     extra: {
-      data: transaction.data,
+      amount: delegationAmount,
     },
   };
+
+  if (tokenAccount && subAccountId) {
+    operation.subOperations = [
+      {
+        id: encodeOperationId(subAccountId, "", "OUT"),
+        hash: "",
+        type: "OUT",
+        value: transaction.amount,
+        fee: new BigNumber(0),
+        blockHash: null,
+        blockHeight: null,
+        senders,
+        recipients,
+        accountId: subAccountId,
+        date: new Date(),
+        extra: {},
+      },
+    ];
+  }
+
   return operation;
 };
 
@@ -80,14 +159,12 @@ const signOperation = ({
         await elrond.setAddress(account.freshAddressPath);
 
         if (tokenAccount) {
-          const tokenIdentifier = tokenAccount.id.split("+")[1];
-          const token = findTokenById(`${tokenIdentifier}`);
+          const { token } = decodeTokenAccountId(tokenAccount.id);
 
-          if (token?.ticker && token.id && token.ledgerSignature) {
-            const collectionIdentifierHex = token.id.split("/")[2];
+          if (token?.name && token.id && token.ledgerSignature) {
             await elrond.provideESDTInfo(
-              token.ticker,
-              collectionIdentifierHex,
+              token.name,
+              extractTokenId(token.id),
               token?.units[0].magnitude,
               CHAIN_ID,
               token.ledgerSignature
@@ -95,9 +172,8 @@ const signOperation = ({
           }
         }
 
-        const unsignedTx: string = await buildTransaction(
+        const unsignedTx: string = await buildTransactionToSign(
           account,
-          tokenAccount,
           transaction
         );
 
@@ -115,18 +191,22 @@ const signOperation = ({
           type: "device-signature-granted",
         });
 
+        const parsedUnsignedTx = JSON.parse(unsignedTx);
+
         const operation = buildOptimisticOperation(
           account,
           transaction,
-          transaction.fees ?? new BigNumber(0)
+          parsedUnsignedTx
         );
+
         o.next({
           type: "signed",
           signedOperation: {
             operation,
             signature: r,
             expirationDate: null,
-          },
+            signatureRaw: parsedUnsignedTx,
+          } as SignedOperation,
         });
       }
 

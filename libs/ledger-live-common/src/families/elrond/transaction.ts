@@ -8,20 +8,26 @@ import type { Account } from "../../types";
 import { getAccountUnit } from "../../account";
 import { formatCurrencyUnit } from "../../currencies";
 export const formatTransaction = (
-  { mode, amount, recipient, useAllAmount }: Transaction,
-  account: Account
-): string => `
+  { mode, amount, recipient, useAllAmount, subAccountId }: Transaction,
+  mainAccount: Account
+): string => {
+  const account =
+    (subAccountId &&
+      (mainAccount.subAccounts || []).find((a) => a.id === subAccountId)) ||
+    mainAccount;
+  return `
 ${mode.toUpperCase()} ${
-  useAllAmount
-    ? "MAX"
-    : amount.isZero()
-    ? ""
-    : " " +
-      formatCurrencyUnit(getAccountUnit(account), amount, {
-        showCode: true,
-        disableRounding: true,
-      })
-}${recipient ? `\nTO ${recipient}` : ""}`;
+    useAllAmount
+      ? "MAX"
+      : amount.isZero()
+      ? ""
+      : " " +
+        formatCurrencyUnit(getAccountUnit(account), amount, {
+          showCode: true,
+          disableRounding: true,
+        })
+  }${recipient ? `\nTO ${recipient}` : ""}`;
+};
 export const fromTransactionRaw = (tr: TransactionRaw): Transaction => {
   const common = fromTransactionCommonRaw(tr);
   return {
@@ -29,6 +35,7 @@ export const fromTransactionRaw = (tr: TransactionRaw): Transaction => {
     family: tr.family,
     mode: tr.mode,
     fees: tr.fees ? new BigNumber(tr.fees) : null,
+    data: tr.data,
     gasLimit: tr.gasLimit,
   };
 };
@@ -39,6 +46,7 @@ export const toTransactionRaw = (t: Transaction): TransactionRaw => {
     family: t.family,
     mode: t.mode,
     fees: t.fees?.toString() || null,
+    data: t.data,
     gasLimit: t.gasLimit,
   };
 };

@@ -1,13 +1,14 @@
 import {
-  CryptoCurrency,
   findTokenById,
   listTokensForCryptoCurrency,
-  TokenCurrency,
 } from "@ledgerhq/cryptoassets";
+import { CryptoCurrency, TokenCurrency } from "@ledgerhq/types-cryptoassets";
+import { Account, SyncConfig, TokenAccount } from "@ledgerhq/types-live";
 import BigNumber from "bignumber.js";
-import { emptyHistoryCache } from "../../account";
-import { Account, SyncConfig, TokenAccount } from "../../types";
-import { getAccountESDTOperations, getAccountESDTTokens } from "./api";
+import { emptyHistoryCache, encodeTokenAccountId } from "../../account";
+import { mergeOps } from "../../bridge/jsHelpers";
+import { getESDTOperations, getAccountESDTTokens } from "./api";
+import { addPrefixToken, extractTokenId } from "./logic";
 
 async function buildElrondESDTTokenAccount({
   parentAccountId,
@@ -20,20 +21,20 @@ async function buildElrondESDTTokenAccount({
   token: TokenCurrency;
   balance: BigNumber;
 }) {
-  const extractedId = token.id;
-  const id = parentAccountId + "+" + extractedId;
-  const tokenIdentifierHex = token.id.split("/")[2];
+  const tokenAccountId = encodeTokenAccountId(parentAccountId, token);
+  const tokenIdentifierHex = extractTokenId(token.id);
   const tokenIdentifier = Buffer.from(tokenIdentifierHex, "hex").toString();
 
-  const operations = await getAccountESDTOperations(
-    parentAccountId,
+  const operations = await getESDTOperations(
+    tokenAccountId,
     accountAddress,
-    tokenIdentifier
+    tokenIdentifier,
+    0
   );
 
   const tokenAccount: TokenAccount = {
     type: "TokenAccount",
-    id,
+    id: tokenAccountId,
     parentId: parentAccountId,
     starred: false,
     token,
@@ -49,6 +50,34 @@ async function buildElrondESDTTokenAccount({
         : new Date(),
     balanceHistoryCache: emptyHistoryCache, // calculated in the jsHelpers
   };
+  return tokenAccount;
+}
+
+async function syncESDTTokenAccountOperations(
+  tokenAccount: TokenAccount,
+  address: string
+): Promise<TokenAccount> {
+  const oldOperations = tokenAccount?.operations || [];
+  // Needed for incremental synchronisation
+  const startAt = oldOperations.length
+    ? Math.floor(oldOperations[0].date.valueOf() / 1000)
+    : 0;
+
+  const tokenIdentifierHex = extractTokenId(tokenAccount.token.id);
+  const tokenIdentifier = Buffer.from(tokenIdentifierHex, "hex").toString();
+
+  // Merge new operations with the previously synced ones
+  const newOperations = await getESDTOperations(
+    tokenAccount.id,
+    address,
+    tokenIdentifier,
+    startAt
+  );
+  const operations = mergeOps(oldOperations, newOperations);
+
+  tokenAccount.operations = operations;
+  tokenAccount.operationsCount = operations.length;
+
   return tokenAccount;
 }
 
@@ -72,7 +101,7 @@ async function elrondBuildESDTTokenAccounts({
 
   const tokenAccounts: TokenAccount[] = [];
 
-  const existingAccountByTicker = {}; // used for fast lookup
+  const existingAccountByTicker: { [key: string]: TokenAccount } = {}; // used for fast lookup
 
   const existingAccountTickers: string[] = []; // used to keep track of ordering
 
@@ -92,15 +121,23 @@ async function elrondBuildESDTTokenAccounts({
   const accountESDTs = await getAccountESDTTokens(accountAddress);
   for (const esdt of accountESDTs) {
     const esdtIdentifierHex = Buffer.from(esdt.identifier).toString("hex");
-    const token = findTokenById(`elrond/esdt/${esdtIdentifierHex}`);
+    const token = findTokenById(addPrefixToken(esdtIdentifierHex));
 
     if (token && !blacklistedTokenIds.includes(token.id)) {
-      const tokenAccount = await buildElrondESDTTokenAccount({
-        parentAccountId: accountId,
-        accountAddress,
-        token,
-        balance: new BigNumber(esdt.balance),
-      });
+      let tokenAccount = existingAccountByTicker[token.ticker];
+      if (!tokenAccount) {
+        tokenAccount = await buildElrondESDTTokenAccount({
+          parentAccountId: accountId,
+          accountAddress,
+          token,
+          balance: new BigNumber(esdt.balance),
+        });
+      } else {
+        tokenAccount = await syncESDTTokenAccountOperations(
+          tokenAccount,
+          accountAddress
+        );
+      }
 
       if (tokenAccount) {
         tokenAccounts.push(tokenAccount);

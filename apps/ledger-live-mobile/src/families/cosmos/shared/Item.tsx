@@ -46,6 +46,7 @@ function Item({
     [onSelect, validator, value],
   );
   const isDisabled = (!value || value.gt(0)) && disabled;
+
   return (
     <TouchableOpacity
       onPress={select}
@@ -67,7 +68,7 @@ function Item({
 
         <LText style={styles.subText} color="grey" numberOfLines={1}>
           <Trans
-            i18nKey="cosmos.delegation.flow.steps.validator.apr"
+            i18nKey="cosmos.delegation.flow.steps.validator.estYield"
             values={{
               amount: estimatedYearlyRewardsRate
                 ? Number(100 * estimatedYearlyRewardsRate).toFixed(2)

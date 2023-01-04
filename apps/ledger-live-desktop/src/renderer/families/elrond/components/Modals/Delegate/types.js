@@ -1,36 +1,36 @@
 // @flow
+
 import type { TFunction } from "react-i18next";
-import type { Device } from "@ledgerhq/live-common/lib/hw/actions/types";
+import type { Device } from "@ledgerhq/live-common/hw/actions/types";
+import type { Account, Transaction, TransactionStatus, Operation } from "@ledgerhq/types-live";
+import type { DelegationType, ElrondProvider } from "~/renderer/families/elrond/types";
+
 import type { Step } from "~/renderer/components/Stepper";
 
-import type { Account, TransactionStatus, Operation } from "@ledgerhq/live-common/lib/types";
-
-import type { Transaction } from "@ledgerhq/live-common/lib/families/cosmos/types";
-
-export type StepId = "castDelegations" | "connectDevice" | "confirmation";
+export type StepId = "validator" | "amount" | "connectDevice" | "confirmation";
 
 export type StepProps = {
   t: TFunction,
-  transitionTo: string => void,
-  device: ?Device,
-  account: ?Account,
-  parentAccount: ?Account,
-  onRetry: void => void,
+  transitionTo: (param: string) => void,
+  device?: Device,
+  account?: Account,
+  parentAccount?: Account,
+  onRetry: () => void,
   onClose: () => void,
   openModal: (key: string, config?: any) => void,
-  optimisticOperation: *,
-  error: *,
+  optimisticOperation: any,
+  error: any,
   signed: boolean,
-  transaction: ?Transaction,
+  transaction?: Transaction,
   status: TransactionStatus,
-  onChangeTransaction: Transaction => void,
-  onUpdateTransaction: ((Transaction) => Transaction) => void,
-  onTransactionError: Error => void,
-  onOperationBroadcasted: Operation => void,
-  setSigned: boolean => void,
+  onChangeTransaction: (transaction: Transaction) => void,
+  onUpdateTransaction: (transaction: Transaction) => void,
+  onTransactionError: (error: Error) => void,
+  onOperationBroadcasted: (operation: Operation) => void,
+  setSigned: (assigned: boolean) => void,
   bridgePending: boolean,
-  validators: any,
-  delegations: any,
+  validators: Array<ElrondProvider>,
+  delegations: Array<DelegationType>,
 };
 
 export type St = Step<StepId, StepProps>;
