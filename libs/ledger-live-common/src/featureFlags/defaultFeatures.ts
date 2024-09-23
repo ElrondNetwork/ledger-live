@@ -460,7 +460,6 @@ export const DEFAULT_FEATURES: Features = {
 
   lldChatbotSupport: DEFAULT_FEATURE,
   llmChatbotSupport: DEFAULT_FEATURE,
-  supportDeviceEuropa: DEFAULT_FEATURE,
   lldRefreshMarketData: {
     ...DEFAULT_FEATURE,
     params: {
@@ -479,6 +478,7 @@ export const DEFAULT_FEATURES: Features = {
     params: {
       environment: "STAGING",
       watchConfig: {},
+      learnMoreLink: "",
     },
   },
   llmWalletSync: {
@@ -486,6 +486,7 @@ export const DEFAULT_FEATURES: Features = {
     params: {
       environment: "STAGING",
       watchConfig: {},
+      learnMoreLink: "",
     },
   },
   lldNftsGalleryNewArch: DEFAULT_FEATURE,

@@ -14,6 +14,8 @@ export enum ErrorReason {
   ALREADY_BACKED_SCAN = "already-backed",
   DIFFERENT_BACKUPS = "different-backups",
   NO_BACKUP = "no-backup",
+  NO_BACKUP_ONBOARDING_DEVICE = "no-backup-onboarding-device",
+  NO_BACKUP_ONBOARDING_QRCODE = "no-backup-onboarding-qrcode",
 }
 
 export interface ErrorConfig {
@@ -35,28 +37,42 @@ export type SpecificProps = {
   secondaryAction?: () => void;
 };
 
+type AnalyticsProps = {
+  page: AnalyticsPage;
+  hasFlow: boolean;
+  button?: AnalyticsButton;
+};
 export function useSpecificError({ primaryAction, secondaryAction }: SpecificProps) {
   const { onClickTrack } = useLedgerSyncAnalytics();
   const { t } = useTranslation();
   const { colors } = useTheme();
 
-  const onTryAgain = (page: AnalyticsPage) => {
-    onClickTrack({ button: AnalyticsButton.UseAnother, page });
-  };
-  const onGoToDelete = (page: AnalyticsPage) => {
-    onClickTrack({ button: AnalyticsButton.DeleteKey, page });
+  const onTryAgain = (props: AnalyticsProps) => {
+    onClickTrack({ button: props.button ?? AnalyticsButton.UseAnother, ...props });
   };
 
-  const onUnderstood = (page: AnalyticsPage) => {
-    onClickTrack({ button: AnalyticsButton.Understand, page });
+  const onTryAnotherLedger = (props: AnalyticsProps) => {
+    onClickTrack({ button: AnalyticsButton.TryAnotherLedger, ...props });
   };
 
-  const onCancel = (page: AnalyticsPage) => {
-    onClickTrack({ button: AnalyticsButton.Cancel, page });
+  const onGoToDelete = (props: AnalyticsProps) => {
+    onClickTrack({ button: AnalyticsButton.DeleteKey, ...props });
   };
 
-  const onCreate = (page: AnalyticsPage) => {
-    onClickTrack({ button: AnalyticsButton.CreateYourKey, page });
+  const onUnderstood = (props: AnalyticsProps) => {
+    onClickTrack({ button: AnalyticsButton.Understand, ...props });
+  };
+
+  const onCancel = (props: AnalyticsProps) => {
+    onClickTrack({ button: AnalyticsButton.Cancel, ...props });
+  };
+
+  const onCreate = (props: AnalyticsProps) => {
+    onClickTrack({ button: AnalyticsButton.SyncYourAccounts, ...props });
+  };
+
+  const ContinueWihtoutSync = (props: AnalyticsProps) => {
+    onClickTrack({ button: AnalyticsButton.ContinueWihtoutSync, ...props });
   };
 
   const errorConfig: Record<ErrorReason, ErrorConfig> = {
@@ -66,7 +82,6 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       description: t(
         "walletSync.walletSyncActivated.synchronizedInstances.unsecuredError.description",
       ),
-      info: t("walletSync.walletSyncActivated.synchronizedInstances.unsecuredError.info"),
       cta: t("walletSync.walletSyncActivated.synchronizedInstances.unsecuredError.cta"),
       ctaSecondary: t(
         "walletSync.walletSyncActivated.synchronizedInstances.unsecuredError.ctaDelete",
@@ -75,11 +90,11 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       buttonType: "main" as ButtonProps["type"],
       primaryAction: () => {
         primaryAction();
-        onTryAgain(AnalyticsPage.RemoveInstanceWrongDevice);
+        onTryAgain({ page: AnalyticsPage.RemoveInstanceWrongDevice, hasFlow: false });
       },
       secondaryAction: () => {
         secondaryAction?.();
-        onGoToDelete(AnalyticsPage.RemoveInstanceWrongDevice);
+        onGoToDelete({ page: AnalyticsPage.RemoveInstanceWrongDevice, hasFlow: false });
       },
     },
     [ErrorReason.AUTO_REMOVE]: {
@@ -88,7 +103,6 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       description: t(
         "walletSync.walletSyncActivated.synchronizedInstances.autoRemoveError.description",
       ),
-      info: t("walletSync.walletSyncActivated.synchronizedInstances.autoRemoveError.info"),
       cta: t("walletSync.walletSyncActivated.synchronizedInstances.autoRemoveError.cta"),
       ctaSecondary: t(
         "walletSync.walletSyncActivated.synchronizedInstances.autoRemoveError.ctaDelete",
@@ -97,11 +111,11 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       buttonType: "main" as ButtonProps["type"],
       primaryAction: () => {
         primaryAction();
-        onUnderstood(AnalyticsPage.AutoRemove);
+        onUnderstood({ page: AnalyticsPage.AutoRemove, hasFlow: false });
       },
       secondaryAction: () => {
         secondaryAction?.();
-        onGoToDelete(AnalyticsPage.AutoRemove);
+        onGoToDelete({ page: AnalyticsPage.AutoRemove, hasFlow: false });
       },
     },
     [ErrorReason.SAME_SEED]: {
@@ -114,7 +128,7 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       buttonType: "main" as ButtonProps["type"],
       primaryAction: () => {
         primaryAction();
-        onUnderstood(AnalyticsPage.SameSeed);
+        onUnderstood({ page: AnalyticsPage.SameSeed, hasFlow: false });
       },
     },
     [ErrorReason.OTHER_SEED]: {
@@ -128,11 +142,11 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       outline: true,
       primaryAction: () => {
         primaryAction();
-        onGoToDelete(AnalyticsPage.OtherSeed);
+        onGoToDelete({ page: AnalyticsPage.OtherSeed, hasFlow: false });
       },
       secondaryAction: () => {
         secondaryAction?.();
-        onCancel(AnalyticsPage.OtherSeed);
+        onCancel({ page: AnalyticsPage.OtherSeed, hasFlow: false });
       },
     },
     [ErrorReason.ALREADY_BACKED_SCAN]: {
@@ -143,19 +157,20 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       buttonType: "main" as ButtonProps["type"],
       primaryAction: () => {
         primaryAction();
-        onUnderstood(AnalyticsPage.ScanAttemptWithSameBackup);
+        onUnderstood({ page: AnalyticsPage.ScanAttemptWithSameBackup, hasFlow: false });
       },
     },
     [ErrorReason.DIFFERENT_BACKUPS]: {
       icon: <Icons.DeleteCircleFill size={"L"} color={colors.error.c60} />,
       title: t("walletSync.synchronize.qrCode.backedWithDifferentSeeds.title"),
       description: t("walletSync.synchronize.qrCode.backedWithDifferentSeeds.description"),
+      info: t("walletSync.synchronize.qrCode.backedWithDifferentSeeds.info"),
       cta: t("walletSync.synchronize.qrCode.backedWithDifferentSeeds.cta"),
       analyticsPage: AnalyticsPage.ScanAttemptWithDifferentBackups,
       buttonType: "main" as ButtonProps["type"],
       primaryAction: () => {
         primaryAction();
-        onGoToDelete(AnalyticsPage.ScanAttemptWithDifferentBackups);
+        onUnderstood({ page: AnalyticsPage.ScanAttemptWithDifferentBackups, hasFlow: false });
       },
     },
     [ErrorReason.NO_BACKUP]: {
@@ -167,7 +182,47 @@ export function useSpecificError({ primaryAction, secondaryAction }: SpecificPro
       buttonType: "main" as ButtonProps["type"],
       primaryAction: () => {
         primaryAction();
-        onCreate(AnalyticsPage.SyncWithNoKey);
+        onCreate({ page: AnalyticsPage.SyncWithNoKey, hasFlow: false });
+      },
+    },
+    [ErrorReason.NO_BACKUP_ONBOARDING_QRCODE]: {
+      icon: <Icons.DeleteCircleFill size={"L"} color={colors.error.c60} />,
+      title: t("walletSync.synchronize.qrCode.unbackedOnboarding.title"),
+      description: t("walletSync.synchronize.qrCode.unbackedOnboarding.description"),
+      info: t("walletSync.synchronize.qrCode.unbackedOnboarding.info"),
+      cta: t("walletSync.synchronize.qrCode.unbackedOnboarding.cta"),
+      ctaSecondary: t("walletSync.synchronize.qrCode.unbackedOnboarding.cancel"),
+      analyticsPage: AnalyticsPage.OnBoardingQRCodeNoBackup,
+      buttonType: "main" as ButtonProps["type"],
+      primaryAction: () => {
+        primaryAction();
+        onTryAgain({
+          page: AnalyticsPage.OnBoardingQRCodeNoBackup,
+          hasFlow: false,
+          button: AnalyticsButton.TryAgain,
+        });
+      },
+      secondaryAction: () => {
+        secondaryAction?.();
+        ContinueWihtoutSync({ page: AnalyticsPage.OnBoardingQRCodeNoBackup, hasFlow: false });
+      },
+    },
+    [ErrorReason.NO_BACKUP_ONBOARDING_DEVICE]: {
+      icon: <Icons.DeleteCircleFill size={"L"} color={colors.error.c60} />,
+      title: t("walletSync.synchronize.unbackedOnboarding.title"),
+      description: t("walletSync.synchronize.unbackedOnboarding.description"),
+      info: t("walletSync.synchronize.unbackedOnboarding.info"),
+      cta: t("walletSync.synchronize.unbackedOnboarding.cta"),
+      ctaSecondary: t("walletSync.synchronize.unbackedOnboarding.cancel"),
+      analyticsPage: AnalyticsPage.OnBoardingDeviceNoBackup,
+      buttonType: "main" as ButtonProps["type"],
+      primaryAction: () => {
+        primaryAction();
+        onTryAnotherLedger({ page: AnalyticsPage.OnBoardingDeviceNoBackup, hasFlow: false });
+      },
+      secondaryAction: () => {
+        secondaryAction?.();
+        ContinueWihtoutSync({ page: AnalyticsPage.OnBoardingDeviceNoBackup, hasFlow: false });
       },
     },
   };

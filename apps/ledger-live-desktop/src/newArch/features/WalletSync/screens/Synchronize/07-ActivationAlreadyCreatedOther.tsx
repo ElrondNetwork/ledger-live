@@ -3,11 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { setDrawerVisibility, setFlow } from "~/renderer/actions/walletSync";
 import { Flow, Step } from "~/renderer/reducers/walletSync";
-import {
-  AnalyticsPage,
-  useLedgerSyncAnalytics,
-  AnalyticsFlow,
-} from "../../hooks/useLedgerSyncAnalytics";
+import { AnalyticsPage, useLedgerSyncAnalytics } from "../../hooks/useLedgerSyncAnalytics";
 import { Error } from "../../components/Error";
 
 export default function AlreadyCreatedOtherSeedStep() {
@@ -17,11 +13,10 @@ export default function AlreadyCreatedOtherSeedStep() {
   const { onClickTrack } = useLedgerSyncAnalytics();
 
   const deleteKey = () => {
-    dispatch(setFlow({ flow: Flow.ManageBackup, step: Step.ManageBackup }));
+    dispatch(setFlow({ flow: Flow.ManageBackup, step: Step.DeleteBackup }));
     onClickTrack({
-      button: "Delete my encryption key",
+      button: "Delete sync",
       page: AnalyticsPage.AlreadySecuredOtherSeed,
-      flow: AnalyticsFlow,
     });
   };
 

@@ -12,15 +12,15 @@ import { resolver as cardano } from "../families/cardano/setup";
 import { resolver as cosmos } from "../families/cosmos/setup";
 import { resolver as elrond } from "../families/elrond/setup";
 import { resolver as evm } from "../families/evm/setup";
+import { resolver as icon } from "../families/icon/setup";
 import { resolver as near } from "../families/near/setup";
 import { resolver as polkadot } from "../families/polkadot/setup";
 import { resolver as solana } from "../families/solana/setup";
 import { resolver as stellar } from "../families/stellar/setup";
 import { resolver as tezos } from "../families/tezos/setup";
+import { resolver as ton } from "../families/ton/setup";
 import { resolver as tron } from "../families/tron/setup";
 import { resolver as xrp } from "../families/xrp/setup";
-import { resolver as icon } from "../families/icon/setup";
-import { resolver as ton } from "../families/ton/setup";
 
 export default {
   casper,
@@ -37,13 +37,13 @@ export default {
   cosmos,
   elrond,
   evm,
+  icon,
   near,
   polkadot,
   solana,
   stellar,
   tezos,
+  ton,
   tron,
   xrp,
-  icon,
-  ton,
 };

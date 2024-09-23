@@ -10,6 +10,7 @@ import {
   TrustchainResult,
   TrustchainResultType,
   TrustchainLifecycle,
+  GetOrCreateTrustchainCallbacks,
 } from "./types";
 import {
   crypto,
@@ -101,9 +102,9 @@ export class SDK implements TrustchainSDK {
   async getOrCreateTrustchain(
     deviceId: string,
     memberCredentials: MemberCredentials,
-    callbacks?: TrustchainDeviceCallbacks,
+    callbacks?: GetOrCreateTrustchainCallbacks,
     topic?: Uint8Array,
-    currentTrustchainId?: string,
+    currentTrustchain?: Trustchain,
   ): Promise<TrustchainResult> {
     this.invalidateJwt();
 
@@ -115,13 +116,19 @@ export class SDK implements TrustchainSDK {
 
     let trustchains = await withJwt(this.api.getTrustchains);
 
-    if (currentTrustchainId) {
-      if (
-        Object.keys(trustchains).length > 0 &&
-        Object.keys(trustchains).find(key => key === currentTrustchainId)
-      ) {
-        throw new TrustchainAlreadyInitialized();
-      } else throw new TrustchainAlreadyInitializedWithOtherSeed();
+    callbacks?.onInitialResponse?.(trustchains);
+
+    if (currentTrustchain) {
+      await this.restoreTrustchain(currentTrustchain, memberCredentials).then(
+        () => {
+          throw Object.keys(trustchains).includes(currentTrustchain.rootId)
+            ? new TrustchainAlreadyInitialized()
+            : new TrustchainAlreadyInitializedWithOtherSeed();
+        },
+        () => {
+          // The user was ejected from the trustchain therefore we can continue
+        },
+      );
     }
 
     if (Object.keys(trustchains).length === 0) {

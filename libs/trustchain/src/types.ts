@@ -1,5 +1,6 @@
 import { Observable } from "rxjs";
 import Transport from "@ledgerhq/hw-transport";
+import { TrustchainsResponse } from "./api";
 
 /**
  * The JWT is a JSON Web Token that is used to authenticate the user.
@@ -172,9 +173,9 @@ export interface TrustchainSDK {
   getOrCreateTrustchain(
     deviceId: string,
     memberCredentials: MemberCredentials,
-    callbacks?: TrustchainDeviceCallbacks,
+    callbacks?: GetOrCreateTrustchainCallbacks,
     topic?: Uint8Array,
-    currentTrustchainId?: string,
+    currentTrustchain?: Trustchain,
   ): Promise<TrustchainResult>;
 
   /**
@@ -232,6 +233,10 @@ export interface TrustchainSDK {
 }
 
 export interface TrustchainDeviceCallbacks {
-  onStartRequestUserInteraction: () => void;
-  onEndRequestUserInteraction: () => void;
+  onStartRequestUserInteraction?: () => void;
+  onEndRequestUserInteraction?: () => void;
+}
+
+export interface GetOrCreateTrustchainCallbacks extends TrustchainDeviceCallbacks {
+  onInitialResponse?: (trustchains: TrustchainsResponse) => void;
 }
